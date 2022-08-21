@@ -1,0 +1,9 @@
+[package]
+name = "auto_api"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+auto_api_core = { path = "../auto_api_core" }
+auto_api_macros = { path = "../auto_api_macros" }

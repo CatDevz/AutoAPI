@@ -1,0 +1,23 @@
+[package]
+name = "auto_api_macros"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+auto_api_core = { path = "../auto_api_core" }
+openapi = { path = "../openapi" }
+
+reqwest = { version = "0.11.11", features = ["blocking"] }
+serde = { version = "1.0.143", features = ["derive"] }
+serde_json = "1.0"
+fancy-regex = "0.10.0"
+lazy_static = "1.4.0"
+
+proc-macro2 = "1.0.43"
+proc-macro-error = "1.0"
+syn = { version = "1.0.99", features = ["full", "extra-traits"] }
+quote = "1.0.10"

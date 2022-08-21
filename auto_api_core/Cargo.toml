@@ -1,0 +1,10 @@
+[package]
+name = "auto_api_core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+thiserror = "1.0.32"
+
+reqwest = "0.11.11"
