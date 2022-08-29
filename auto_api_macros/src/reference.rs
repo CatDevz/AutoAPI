@@ -18,12 +18,9 @@ pub fn expand_reference<'a>(
     let mut parts = reference.split("/").skip(1);
     let mut current_node = root_node;
     while let Some(next) = parts.next() {
-        current_node = match current_node {
-            serde_json::Value::Object(it) => it
-                .get(next)
-                .ok_or_else(|| MacroError::InvalidReference(reference.to_string()))?,
-            _ => return Err(MacroError::InvalidReference(reference.to_string())),
-        }
+        current_node = current_node
+            .get(next)
+            .ok_or_else(|| MacroError::InvalidReference(reference.to_string()))?;
     }
 
     Ok(current_node)
