@@ -47,13 +47,14 @@ version = "0.1.0"
 dependencies = [
  "auto_api_core",
  "auto_api_macros",
+ "reqwest",
+ "serde",
 ]
 
 [[package]]
 name = "auto_api_core"
 version = "0.1.0"
 dependencies = [
- "reqwest",
  "thiserror",
 ]
 
@@ -192,7 +193,6 @@ name = "example"
 version = "0.1.0"
 dependencies = [
  "auto_api",
- "serde",
  "serde_json",
 ]
 

@@ -1,18 +1,19 @@
-pub trait BaseClient<T: BaseClient = Self> {
-    fn default_base_url() -> &'static str;
-    fn new(options: ClientOptions<T>) -> Self;
+pub trait BaseServer {
+    fn url(&self) -> &'_ str;
 }
 
-pub struct ClientOptions<'a, T: BaseClient> {
-    pub base_url: &'a str,
-    pub _marker: std::marker::PhantomData<&'a T>,
+pub trait BaseClient<TServer: BaseServer + Default> {
+    fn new(options: ClientOptions<TServer>) -> Self;
 }
 
-impl<T: BaseClient> Default for ClientOptions<'_, T> {
+pub struct ClientOptions<TServer: BaseServer + Default> {
+    pub server: TServer,
+}
+
+impl<TServer: BaseServer + Default> Default for ClientOptions<TServer> {
     fn default() -> Self {
         Self {
-            base_url: T::default_base_url(),
-            _marker: std::marker::PhantomData,
+            server: TServer::default(),
         }
     }
 }

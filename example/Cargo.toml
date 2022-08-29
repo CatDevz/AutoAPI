@@ -7,5 +7,4 @@ license = "MIT"
 [dependencies]
 auto_api = { path = "../auto_api" }
 
-serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0"

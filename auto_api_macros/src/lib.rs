@@ -1,37 +1,29 @@
-pub(crate) mod utils;
 pub(crate) mod agnostic;
+pub(crate) mod args;
+pub(crate) mod model;
+pub(crate) mod reference;
+pub(crate) mod utils;
 
 use agnostic::operation::{build_operation_method, VersionAgnosticOperation};
+use args::GenApiArguments;
 use utils::read_resource;
 
 use openapi::v2::Scheme;
 use proc_macro::TokenStream;
 use proc_macro_error::{abort, proc_macro_error};
 use quote::quote;
-use syn::parse::{Parse, ParseStream};
 
-struct GenApiArguments {
-    documentation: syn::LitStr,
-    api_base_url: Option<syn::LitStr>,
-}
-
-impl Parse for GenApiArguments {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        // jank™.
-        struct GenApiSyntax(syn::LitStr, Option<syn::token::Comma>, Option<syn::LitStr>);
-        let syntax = GenApiSyntax(
-            input.parse()?,
-            input.parse().unwrap_or(None),
-            input.parse().unwrap_or(None),
-        );
-
-        Ok(GenApiArguments {
-            documentation: syntax.0,
-            api_base_url: syntax.2,
-        })
-    }
-}
-
+/// Generate a client library from the provided OpenAPI/Swagger specification. This specification
+/// can be provided either from online, or from a local file (recommended).
+///
+/// Example usage:
+///
+/// ```ignore
+/// #[auto_api::gen_api("file:///openapi/petstore.json")]
+/// pub mod petstore_api_local {}
+/// ```
+///
+/// TODO: Write better documentation with more complete examples
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn gen_api(arguments: TokenStream, module: TokenStream) -> TokenStream {
@@ -61,47 +53,108 @@ pub fn gen_api(arguments: TokenStream, module: TokenStream) -> TokenStream {
     let openapi_spec = openapi::from_reader(openapi_text.as_bytes())
         .unwrap_or_else(|_| abort!(
             arguments.documentation, "OpenAPI documentation provided is of an unsupported format/version or malformed."; 
-                note = "Auto API currently only supports OpenAPI versions 2.0 and 3.0.0";
+                note = "Auto API currently only supports OpenAPI version 3.0.0";
                 help = "Try opening {} in a web browser to verify it's resp&onding with the correct documentation",& &openapi_uri;
         ));
 
-    // Getting the base URL of the API
-    let base_url = match arguments.api_base_url {
-        Some(it) => it.value(),
-        None => {
-            // If no specific base URL was provided we try to do the best we can with the OpenAPI documentation provided.
-            match openapi_spec.clone() {
-                openapi::OpenApi::V2(v2) => {
-                    // Getting the scheme or defaulting to https
-                    let scheme = match v2
-                        .schemes
-                        .unwrap_or_default()
-                        .first()
-                        .unwrap_or(&Scheme::Https)
-                    {
-                        Scheme::Http => "http",
-                        Scheme::Https => "https",
-                        Scheme::Ws | Scheme::Wss => abort!(
-                            arguments.api_base_url, "Scheme detected is not supported.";
-                                help = "You can supply a base url as an optional 3rd parameter";
-                        ),
-                    };
+    // Getting a description from the OpenAPI documentation to use as docs on our Client struct
+    let openapi_description = match &openapi_spec {
+        openapi::OpenApi::V2(v2) => {
+            let info = &v2.info;
+            let mut res = String::default();
 
-                    let base_path = v2.base_path.unwrap_or_default();
-                    v2.host
-                        .map(|it| format!("{}://{}{}", scheme, it, base_path))
-                }
-                openapi::OpenApi::V3_0(v3) => v3
-                    .servers
-                    .and_then(|it| it.first().cloned())
-                    .map(|it| it.url),
+            if let Some(title) = &info.title {
+                res.push_str("# ");
+                res.push_str(title);
+                res.push_str("\n\n");
             }
-            .unwrap_or_else(|| {
-                abort!(arguments.api_base_url,
-                    "Could not determine base url from OpenAPI documentation.";
+
+            if let Some(description) = &info.description {
+                res.push_str(description);
+                res.push_str("\n\n");
+            }
+
+            if let Some(tos) = &info.terms_of_service {
+                res.push_str("[Terms of Service](");
+                res.push_str(tos);
+                res.push_str(")");
+            }
+
+            res
+        }
+        openapi::OpenApi::V3_0(v3) => {
+            let info = &v3.info;
+            let mut res = String::default();
+
+            res.push_str("# ");
+            res.push_str(&info.title);
+            res.push_str("\n\n");
+
+            if let Some(description) = &info.description {
+                res.push_str(description);
+                res.push_str("\n\n");
+            }
+
+            if let Some(tos) = &info.terms_of_service {
+                res.push_str("[Terms of Service](");
+                res.push_str(&tos.to_string());
+                res.push_str(")");
+            }
+
+            res
+        }
+    };
+
+    // Getting the base URL of the API
+    // TODO: Change to use a server enum
+    let base_url = match openapi_spec.clone() {
+        openapi::OpenApi::V2(v2) => {
+            // Getting the scheme or defaulting to https
+            let scheme = match v2
+                .schemes
+                .unwrap_or_default()
+                .first()
+                .unwrap_or(&Scheme::Https)
+            {
+                Scheme::Http => "http",
+                Scheme::Https => "https",
+                Scheme::Ws | Scheme::Wss => abort!(
+                    arguments.documentation, "Scheme detected is not supported.";
                         help = "You can supply a base url as an optional 3rd parameter";
-                )
-            })
+                ),
+            };
+
+            let base_path = v2.base_path.unwrap_or_default();
+            v2.host
+                .map(|it| format!("{}://{}{}", scheme, it, base_path))
+        }
+        openapi::OpenApi::V3_0(v3) => v3
+            .servers
+            .and_then(|it| it.first().cloned())
+            .map(|it| it.url),
+    }
+    .unwrap_or_else(|| {
+        abort!(arguments.documentation,
+            "Could not determine base url from OpenAPI documentation.";
+                help = "You can supply a base url as an optional 3rd parameter";
+        )
+    });
+
+    let _servers = match openapi_spec.clone() {
+        openapi::OpenApi::V2(_v2) => {}
+        openapi::OpenApi::V3_0(v3) => {
+            let servers = v3.servers.unwrap_or_default();
+            for (i, server) in servers.iter().enumerate() {
+                let _name = server.description.clone().unwrap_or_else(|| i.to_string());
+            }
+            // servers.iter().enumerate().map(|(i, server)| {
+            //     let default_name = i.to_string();
+            //     let name = server
+            //         .description
+            //         .as_ref()
+            //         .and_then(|it| it.split(" ").next())
+            //         .unwrap_or_else(|| &default_name);
+            // });
         }
     };
 
@@ -113,27 +166,62 @@ pub fn gen_api(arguments: TokenStream, module: TokenStream) -> TokenStream {
         openapi::OpenApi::V2(v2) => {
             for (path, details) in v2.paths.iter() {
                 for (http_method, operation) in details.iter() {
-                    methods.push(build_operation_method(path, &http_method, VersionAgnosticOperation::from(operation.clone())));
+                    methods.push(build_operation_method(
+                        path,
+                        &http_method,
+                        VersionAgnosticOperation::from(operation.clone()),
+                    ));
                 }
             }
         }
         openapi::OpenApi::V3_0(v3) => {
             for (path, details) in v3.paths.iter() {
                 if let Some(operation) = &details.get {
-                    methods.push(build_operation_method(path, "GET", VersionAgnosticOperation::from(operation.clone())));
+                    methods.push(build_operation_method(
+                        path,
+                        "GET",
+                        VersionAgnosticOperation::from(operation.clone()),
+                    ));
                 }
+                // TODO: More than just GET
             }
         }
     };
 
     // Generating the output token stream
     let inner = quote! {
-        use auto_api::reqwest;
-        use auto_api::client::base::{BaseClient, ClientOptions};
+        #![doc = #openapi_description]
+
+        // Include some private runtime dependencies.
+        use auto_api::__private::{reqwest, serde};
+
+        use auto_api::client::base::{BaseClient, BaseServer, ClientOptions};
         use auto_api::error::Error;
 
-        use serde::{Serialize, Deserialize};
+        // Server
+        pub enum Server {
+            Custom { url: String },
+        }
 
+        impl BaseServer for Server {
+            fn url(&self) -> &str {
+                match self {
+                    Server::Custom { url } => url,
+                }
+            }
+        }
+
+        impl Default for Server {
+            fn default() -> Self {
+                // TODO:
+                Self::Custom {
+                    url: #base_url.to_string()
+                }
+            }
+        }
+
+        // Client
+        #[doc = #openapi_description]
         pub struct Client {
             inner: reqwest::Client,
             pub base_url: String,
@@ -143,15 +231,11 @@ pub fn gen_api(arguments: TokenStream, module: TokenStream) -> TokenStream {
             #( #methods )*
         }
 
-        impl BaseClient for Client {
-            fn default_base_url() -> &'static str {
-                #base_url
-            }
-
-            fn new(options: ClientOptions<Client>) -> Self {
+        impl BaseClient<Server> for Client {
+            fn new(options: ClientOptions<Server>) -> Self {
                 Self {
                     inner: reqwest::Client::new(),
-                    base_url: options.base_url.to_string(),
+                    base_url: options.server.url().to_string(),
                 }
             }
         }
