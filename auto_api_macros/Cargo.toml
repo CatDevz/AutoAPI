@@ -10,6 +10,7 @@ proc-macro = true
 [dependencies]
 auto_api_core = { path = "../auto_api_core" }
 openapi = { path = "../openapi" }
+openapiv3 = "1.0.1"
 
 reqwest = { version = "0.11.11", features = ["blocking"] }
 serde = { version = "1.0.143", features = ["derive"] }

@@ -1,4 +1,5 @@
 use auto_api_core::error::MacroError;
+use serde::de::DeserializeOwned;
 
 /// Expand the reference from a root object (node), as an example '#/contacts/email'
 /// will point to the email value in the contacts object in the root object
@@ -24,6 +25,17 @@ pub fn expand_reference<'a>(
     }
 
     Ok(current_node)
+}
+
+/// Expand the reference from root object and then deserialize into type T.
+pub fn expand_typed_reference<T: DeserializeOwned>(
+    root_node: &serde_json::Value,
+    reference: &str,
+) -> Result<T, MacroError> {
+    let expanded = expand_reference(root_node, reference)?;
+    let expanded = serde_json::from_value(expanded.clone())
+        .map_err(|err| MacroError::InvalidInput(err.to_string()))?;
+    Ok(expanded)
 }
 
 #[cfg(test)]
