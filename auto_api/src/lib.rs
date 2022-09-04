@@ -1,9 +1,9 @@
-//! This crate provides the `gen_api` macro for generating a client library based on
-//! a provided OpenAPI or Swagger compliant document.
+//! This crate provides the `gen_api` macro for generating a client library
+//! based on a provided OpenAPI or Swagger compliant document.
 //!
 //! # Example
-//! The following example generates a client library for the Swagger Petstore API, then
-//! makes an syncronous blocking call to create a pet.
+//! The following example generates a client library for the Swagger Petstore
+//! API, then makes an syncronous blocking call to create a pet.
 //!
 //! ```ignore
 //! #[auto_api::gen_api("file://openapi/petstore.json")]
@@ -21,12 +21,12 @@
 pub use auto_api_core::{client, error};
 pub use auto_api_macros::gen_api;
 
-/// All dependencies our macro needs at runtime will be put in this crate, so they are
-/// accessible without the user of our crate needing them installed aswell.
+/// All dependencies our macro needs at runtime will be put in this crate, so
+/// they are accessible without the user of our crate needing them installed
+/// aswell.
 ///
 /// This module should not be used by end users
 #[doc(hidden)]
 pub mod __private {
-    pub use reqwest;
-    pub use serde;
+    pub use {reqwest, serde};
 }

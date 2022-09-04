@@ -19,8 +19,9 @@ impl<TServer: BaseServer + Default> Default for ClientOptions<TServer> {
 }
 
 mod petstore_api {
-    use super::{BaseClient, BaseServer, ClientOptions};
     use auto_api::__private::reqwest;
+
+    use super::{BaseClient, BaseServer, ClientOptions};
 
     //// Settings
     pub enum Server {

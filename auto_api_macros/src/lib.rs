@@ -9,14 +9,14 @@ use documentation::generate_api_module_docs;
 use openapiv3::OpenAPI;
 use operation::generate_operation_methods;
 use path::TypePathMap;
-use utils::read_resource;
-
 use proc_macro::TokenStream;
 use proc_macro_error::{abort, proc_macro_error};
 use quote::quote;
+use utils::read_resource;
 
-/// Generate a client library from the provided OpenAPI/Swagger specification. This specification
-/// can be provided either from online, or from a local file (recommended).
+/// Generate a client library from the provided OpenAPI/Swagger specification.
+/// This specification can be provided either from online, or from a local file
+/// (recommended).
 ///
 /// Example usage:
 ///

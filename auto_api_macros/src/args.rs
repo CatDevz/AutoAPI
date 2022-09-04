@@ -1,8 +1,5 @@
-use syn::{
-    braced,
-    parse::{Parse, ParseStream},
-    token, Ident, LitStr, Visibility,
-};
+use syn::parse::{Parse, ParseStream};
+use syn::{braced, token, Ident, LitStr, Visibility};
 
 pub struct GenApiArguments {
     pub documentation: LitStr,

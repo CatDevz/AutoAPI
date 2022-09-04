@@ -3,11 +3,9 @@ use openapiv3::{OpenAPI, Operation};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 
-use crate::{
-    documentation::generate_api_operation_docs,
-    path::TypePathMap,
-    utils::casing::{convert_casing_to_pascal, convert_casing_to_snake},
-};
+use crate::documentation::generate_api_operation_docs;
+use crate::path::TypePathMap;
+use crate::utils::casing::{convert_casing_to_pascal, convert_casing_to_snake};
 
 pub struct OperationMethod {
     pub builder_identifier: Ident,
@@ -31,7 +29,8 @@ pub fn generate_operation_method(
     // Generating docs with the operation
     let operation_docs = generate_api_operation_docs(&operation);
 
-    // Getting the operation name, and making an identifier for the builder and function out of it
+    // Getting the operation name, and making an identifier for the builder and
+    // function out of it
     let operation_name = match &operation.operation_id {
         Some(it) => it.clone(),
         None => format!("{method}/{path}")

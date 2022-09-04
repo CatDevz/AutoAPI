@@ -1,8 +1,8 @@
 pub mod casing;
 
-use auto_api_core::error::MacroError;
-
 use std::fs;
+
+use auto_api_core::error::MacroError;
 
 /// Reads the strings of a resource given a URI, capable of reading resources
 /// from the web and from your local filesystem
