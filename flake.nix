@@ -10,30 +10,20 @@
     [ "x86_64-linux" ]
     (system:
     let
+      overlays = [ (import rust-overlay) ];
       pkgs = import nixpkgs {
-        inherit system;
-        overlays = [
-          (import rust-overlay)
-        ];
+        inherit system overlays;
       };
     in 
     rec
     {
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
-          # Build dependencies
-          rustc
-          cargo
+          (rust-bin.selectLatestNightlyWith (toolchain: toolchain.default))
+          rust-analyzer
           openssl
           pkg-config
-
-          # Development tools
-          rust-analyzer
-          rustfmt
-          clippy
         ];
-
-        RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
     });
 }
