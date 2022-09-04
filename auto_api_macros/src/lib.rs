@@ -4,15 +4,16 @@ pub(crate) mod operation;
 pub(crate) mod path;
 pub(crate) mod utils;
 
-use args::{GenApiArguments, GenApiModule};
-use documentation::generate_api_module_docs;
 use openapiv3::OpenAPI;
-use operation::generate_operation_methods;
-use path::TypePathMap;
 use proc_macro::TokenStream;
 use proc_macro_error::{abort, proc_macro_error};
 use quote::quote;
-use utils::read_resource;
+
+use crate::args::{GenApiArguments, GenApiModule};
+use crate::documentation::generate_api_module_docs;
+use crate::operation::generate_operation_methods;
+use crate::path::TypePathMap;
+use crate::utils::read_resource;
 
 /// Generate a client library from the provided OpenAPI/Swagger specification.
 /// This specification can be provided either from online, or from a local file
