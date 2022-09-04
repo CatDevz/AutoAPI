@@ -4,5 +4,4 @@ members = [
     "auto_api_core",
     "auto_api_macros",
     "example",
-    "openapi",
 ]

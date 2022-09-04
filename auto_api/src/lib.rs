@@ -5,8 +5,8 @@
 //! The following example generates a client library for the Swagger Petstore API, then
 //! makes an syncronous blocking call to create a pet.
 //!
-//! ```
-//! #[auto_api::gen_api("file:///openapi/petstore.json")]
+//! ```ignore
+//! #[auto_api::gen_api("file://openapi/petstore.json")]
 //! pub mod petstore_api {}
 //!
 //! fn main() {

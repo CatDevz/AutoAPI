@@ -19,10 +19,15 @@ pub fn read_resource(uri: &str) -> Result<String, MacroError> {
             .map_err(|err| MacroError::ResourceLoadingFailed(err.to_string()))?,
         "file" => {
             // Getting the base directory (the one with Cargo.toml)
-            let base_dir = std::env::var("CARGO_MANIFEST_DIR")
-                .map_err(|err| MacroError::ResourceLoadingFailed(err.to_string()))?;
+            let mut base_dir = String::default();
+            if !path.starts_with("/") {
+                base_dir.push_str(
+                    &std::env::var("CARGO_MANIFEST_DIR")
+                        .map_err(|err| MacroError::ResourceLoadingFailed(err.to_string()))?,
+                );
+            }
 
-            fs::read_to_string(base_dir + &path)
+            fs::read_to_string(format!("{base_dir}/{path}"))
                 .map_err(|err| MacroError::ResourceLoadingFailed(err.to_string()))?
         }
         _ => return Err(MacroError::UnsupportedProtocol(protocol.to_string())),
